@@ -4,26 +4,41 @@ using System.Collections;
 public class GameManager : MonoBehaviour {
 
 	public Transform block;
-	public int columns = 5;
 	public int rows = 5;
+	public int columns = 5;
+
+	public Vector2 scaleSize = new Vector2(1,1);
+
+	public Transform startPointMatrix;
 
 	private Block[,] matrix;
-	private Color[] colors = new Color[] {Color.red, Color.gray, Color.green};
+	private Color[] colors = new Color[] {Color.red, Color.green, Color.blue, Color.cyan};
+	private Vector2 blockSize;
 
 	void Start () {
-		matrix = new Block[columns,rows];
+		block.localScale = scaleSize;
+		blockSize = block.GetComponent<SpriteRenderer>().bounds.size;
 
-		for (int i = 0; i < columns; i++) {
-			for (int j = 0; j < rows; j++) {
+		matrix = new Block[rows,columns];
+
+		for (int i = 0; i < rows; i++) {
+			for (int j = 0; j < columns; j++) {
 				Block properties = new Block();
 
-				Color color = colors[Random.Range(0, colors.Length)];
+				int colorIndex = Random.Range(0, colors.Length);
 
+				Color color = colors[colorIndex];
+
+				properties.colorIndex = colorIndex;
 				properties.color = color;
 
 				matrix[i,j] = properties;
 
-				Transform newBlock = Instantiate(block);
+				Vector2 position = new Vector2(startPointMatrix.position.x + (blockSize.x * j),
+				                               startPointMatrix.position.y - (blockSize.y * i));
+
+				Transform newBlock = Instantiate(block, position, Quaternion.identity) as Transform;
+
 				newBlock.GetComponent<SpriteRenderer>().color = color;	
 			}
 		}
