@@ -1,11 +1,11 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 
 public class Block : MonoBehaviour {
 
 	public float speedAnimation = 10f;
 
-	public Vector2 matrixIndex;
+	public IntVector2 matrixIndex;
 	public int colorIndex;
 	public Color color;
 	public Vector2 scaleSize;
@@ -34,6 +34,8 @@ public class Block : MonoBehaviour {
 		                               Mathf.Lerp(currentScale.y, scaleSize.y, Time.deltaTime * speedAnimation));
 
 		transform.localScale = newScale;
+
+		spriteRenderer.color = color;
 
 		Color newColor = spriteRenderer.color;
 		newColor.a = Mathf.Lerp(newColor.a, 1.0f, Time.deltaTime * speedAnimation);

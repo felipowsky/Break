@@ -16,7 +16,7 @@ public class GameManager : MonoBehaviour {
 
 	public bool canInteract = true;
 
-	private Transform[,] matrix;
+	private Block[,] matrix;
 	private Color[] colors = new Color[] {Color.red, Color.green, Color.blue, Color.cyan};
 	private Vector2 blockSize;
 
@@ -28,11 +28,11 @@ public class GameManager : MonoBehaviour {
 		blockPrefab.localScale = scaleSize;
 		blockSize = blockPrefab.GetComponent<SpriteRenderer>().bounds.size;
 
-		matrix = new Transform[rows,columns];
+		matrix = new Block[rows, columns];
 
 		for (int row = 0; row < rows; row++) {
 			for (int column = 0; column < columns; column++) {
-				Transform newBlock = CreateBlock(row, column);
+				Block newBlock = CreateBlock(row, column);
 				matrix[row, column] = newBlock;
 			}
 		}
@@ -41,7 +41,7 @@ public class GameManager : MonoBehaviour {
 	void Update () {
 	}
 
-	Transform CreateBlock (int row, int column) {
+	Block CreateBlock (int row, int column) {
 
 		int colorIndex = Random.Range(0, colors.Length);
 		
@@ -49,56 +49,49 @@ public class GameManager : MonoBehaviour {
 
 		Vector2 position = PositionByIndex(row, column);
 
-		Transform newBlock = Instantiate(blockPrefab, position, Quaternion.identity) as Transform;
-		Block properties = newBlock.GetComponent<Block>();
+		Transform newTransform = Instantiate(blockPrefab, position, Quaternion.identity) as Transform;
+		Block newBlock = newTransform.GetComponent<Block>();
 		
-		properties.matrixIndex = new Vector2(row, column);
-		properties.colorIndex = colorIndex;
-		properties.color = color;
-		properties.scaleSize = scaleSize;
-		properties.finalPosition = position;
-
-		newBlock.GetComponent<SpriteRenderer>().color = color;
+		newBlock.matrixIndex = new IntVector2(row, column);
+		newBlock.colorIndex = colorIndex;
+		newBlock.color = color;
+		newBlock.scaleSize = scaleSize;
+		newBlock.finalPosition = position;
 
 		return newBlock;
 	}
 
-	public void BreakBlocks (Vector2 origin) {
+	public void BreakBlocks (IntVector2 origin) {
 
 		canInteract = false;
 
 		try {
 			int minimumCount = 3;
 
-			HashSet<Transform> blocksToBreak = new HashSet<Transform>();
+			HashSet<Block> blocksToBreak = new HashSet<Block>();
 
-			Block blockOrigin = matrix[(int) origin.x, (int) origin.y].GetComponent<Block>();
+			Block blockOrigin = matrix[origin.x, origin.y].GetComponent<Block>();
 
 			BreakBlockAndAdjacents(origin, blockOrigin.colorIndex, ref blocksToBreak);
 
 			if (blocksToBreak.Count >= minimumCount) {
-				foreach (Transform blockTransform in blocksToBreak) {
-					Block block = blockTransform.GetComponent<Block>();
+				foreach (Block block in blocksToBreak) {
+					matrix[block.matrixIndex.x, block.matrixIndex.y] = null;
 
-					matrix[(int) block.matrixIndex.x, (int) block.matrixIndex.y] = null;
-
-					Destroy(blockTransform.gameObject);
+					Destroy(block.gameObject);
 				}
 
-				List<Vector2> emptySpaces = new List<Vector2>();
+				List<IntVector2> emptySpaces = new List<IntVector2>();
 
 				RearrangeMatrix(ref emptySpaces);
 
 				if (emptySpaces.Count > 0) {
-					foreach (Vector2 index in emptySpaces) {
-						int row = (int) index.x;
-						int column = (int) index.y;
+					foreach (IntVector2 index in emptySpaces) {
+						Block newBlock = CreateBlock(index.x, index.y);
 
-						Transform newBlock = CreateBlock(row, column);
+						newBlock.ShowAnimated();
 
-						newBlock.GetComponent<Block>().ShowAnimated();
-
-						matrix[row, column] = newBlock;
+						matrix[index.x, index.y] = newBlock;
 					}
 				}
 			}
@@ -107,7 +100,7 @@ public class GameManager : MonoBehaviour {
 		}
 	}
 
-	void BreakBlockAndAdjacents (Vector2 index, int colorIndex, ref HashSet<Transform> blocksToBreak) {
+	void BreakBlockAndAdjacents (IntVector2 index, int colorIndex, ref HashSet<Block> blocksToBreak) {
 		if (index.x < 0) {
 			return;
 		}
@@ -124,40 +117,38 @@ public class GameManager : MonoBehaviour {
 			return;
 		}
 
-		Transform blockTransform = matrix[(int) index.x, (int) index.y];
+		Block block = matrix[index.x, index.y];
 
-		if (blockTransform == null) {
+		if (block == null) {
 			return;
 		}
 
-			if (blocksToBreak.Contains(blockTransform)) {
+		if (blocksToBreak.Contains(block)) {
 			return;
 		}
-
-		Block block = blockTransform.GetComponent<Block>();
 
 		if (block.colorIndex != colorIndex) {
 			return;
 		}
 
-		blocksToBreak.Add(blockTransform);
+		blocksToBreak.Add(block);
 
-		BreakBlockAndAdjacents(new Vector2(index.x - 1, index.y), colorIndex, ref blocksToBreak);
-		BreakBlockAndAdjacents(new Vector2(index.x + 1, index.y), colorIndex, ref blocksToBreak);
-		BreakBlockAndAdjacents(new Vector2(index.x, index.y - 1), colorIndex, ref blocksToBreak);
-		BreakBlockAndAdjacents(new Vector2(index.x, index.y + 1), colorIndex, ref blocksToBreak);
+		BreakBlockAndAdjacents(new IntVector2(index.x - 1, index.y), colorIndex, ref blocksToBreak);
+		BreakBlockAndAdjacents(new IntVector2(index.x + 1, index.y), colorIndex, ref blocksToBreak);
+		BreakBlockAndAdjacents(new IntVector2(index.x, index.y - 1), colorIndex, ref blocksToBreak);
+		BreakBlockAndAdjacents(new IntVector2(index.x, index.y + 1), colorIndex, ref blocksToBreak);
 	}
 
-	void RearrangeMatrix (ref List<Vector2> emptySpaces) {
+	void RearrangeMatrix (ref List<IntVector2> emptySpaces) {
 		for (int row = rows - 1; row >= 0; row--) {
 			for (int column = columns - 1; column >= 0; column--) {
-				Transform block = matrix[row, column];
+				Block block = matrix[row, column];
 
 				if (block == null) {
-					Transform replaceBlock = null;
+					Block replaceBlock = null;
 
 					for (int i = row - 1; i >= 0 && replaceBlock == null; i--) {
-						Transform candidate = matrix[i, column];
+						Block candidate = matrix[i, column];
 
 						if (candidate != null) {
 							replaceBlock = candidate;
@@ -165,15 +156,14 @@ public class GameManager : MonoBehaviour {
 					}
 
 					if (replaceBlock != null) {
-						Block replaceProperties = replaceBlock.GetComponent<Block>();
-						matrix[(int) replaceProperties.matrixIndex.x, (int) replaceProperties.matrixIndex.y] = null;
-						replaceProperties.matrixIndex = new Vector2(row, column);
+						matrix[replaceBlock.matrixIndex.x, replaceBlock.matrixIndex.y] = null;
+						replaceBlock.matrixIndex = new IntVector2(row, column);
 						matrix[row, column] = replaceBlock;
 
-						replaceProperties.finalPosition = PositionByIndex(row, column);
+						replaceBlock.finalPosition = PositionByIndex(row, column);
 					
 					} else if (emptySpaces != null) {
-						emptySpaces.Add(new Vector2(row, column));
+						emptySpaces.Add(new IntVector2(row, column));
 					}
 				}
 			}
