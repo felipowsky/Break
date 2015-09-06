@@ -56,6 +56,7 @@ public class GameManager : MonoBehaviour {
 		properties.colorIndex = colorIndex;
 		properties.color = color;
 		properties.scaleSize = scaleSize;
+		properties.finalPosition = position;
 
 		newBlock.GetComponent<SpriteRenderer>().color = color;
 
@@ -169,7 +170,7 @@ public class GameManager : MonoBehaviour {
 						replaceProperties.matrixIndex = new Vector2(row, column);
 						matrix[row, column] = replaceBlock;
 
-						replaceBlock.position = PositionByIndex(row, column);
+						replaceProperties.finalPosition = PositionByIndex(row, column);
 					
 					} else if (emptySpaces != null) {
 						emptySpaces.Add(new Vector2(row, column));

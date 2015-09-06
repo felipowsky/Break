@@ -9,8 +9,7 @@ public class Block : MonoBehaviour {
 	public int colorIndex;
 	public Color color;
 	public Vector2 scaleSize;
-
-	private bool animating = false;
+	public Vector2 finalPosition;
 
 	private SpriteRenderer spriteRenderer;
 
@@ -19,26 +18,28 @@ public class Block : MonoBehaviour {
 	}
 
 	void Start () {
-		if (!animating) {
-			transform.localScale = scaleSize;
-		}
 	}
 
 	void Update () {
-		if (animating) {
-			Vector2 currentScale = transform.localScale;
+		Vector2 currentPosition = transform.position;
+		
+		Vector2 newPosition = new Vector2(Mathf.Lerp(currentPosition.x, finalPosition.x, Time.deltaTime * speedAnimation),
+		                                  Mathf.Lerp(currentPosition.y, finalPosition.y, Time.deltaTime * speedAnimation));
+		
+		transform.position = newPosition;
 
-			Vector2 newScale = new Vector2(Mathf.Lerp(currentScale.x, scaleSize.x, Time.deltaTime * speedAnimation),
-			                               Mathf.Lerp(currentScale.y, scaleSize.y, Time.deltaTime * speedAnimation));
+		Vector2 currentScale = transform.localScale;
 
-			transform.localScale = newScale;
+		Vector2 newScale = new Vector2(Mathf.Lerp(currentScale.x, scaleSize.x, Time.deltaTime * speedAnimation),
+		                               Mathf.Lerp(currentScale.y, scaleSize.y, Time.deltaTime * speedAnimation));
 
-			Color newColor = spriteRenderer.color;
-			newColor.a = Mathf.Lerp(newColor.a, 1.0f, Time.deltaTime * speedAnimation);
+		transform.localScale = newScale;
 
-			spriteRenderer.color = newColor;
-		}
-	}
+		Color newColor = spriteRenderer.color;
+		newColor.a = Mathf.Lerp(newColor.a, 1.0f, Time.deltaTime * speedAnimation);
+
+		spriteRenderer.color = newColor;
+}
 
 	void OnMouseDown () {
 		GameManager manager = GameManager.instance;
@@ -51,18 +52,12 @@ public class Block : MonoBehaviour {
 	}
 
 	public void ShowAnimated () {
-		if (animating) {
-			return;
-		}
-
-		transform.localScale = Vector2.zero;
+		//transform.localScale = Vector2.zero;
 
 		Color newColor = spriteRenderer.color;
 		newColor.a = 0.0f;
 
 		spriteRenderer.color = newColor;
-
-		animating = true;
 	}
 
 }
